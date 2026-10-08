@@ -1,0 +1,6 @@
+registros/*
+!registros/.gitkeep
+__pycache__/
+*.pyc
+firmware/.pio/
+.vscode/

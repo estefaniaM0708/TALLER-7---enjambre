@@ -1,0 +1,14 @@
+# Opcional: correr el gemelo y las herramientas sin Docker
+#   conda env create -f environment.yml
+#   conda activate enjambre-aco
+name: enjambre-aco
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pillow
+  - matplotlib
+  - pip
+  - pip:
+      - pybullet==3.2.7

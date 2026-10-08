@@ -1,0 +1,5 @@
+.git
+firmware/.pio
+registros
+docs
+**/__pycache__

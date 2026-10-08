@@ -1,0 +1,24 @@
+# Todo virtual: el gemelo digital + las 3 ESP32 virtuales (mismo código del firmware)
+#   docker compose -f docker-compose.virtual.yml up --build     y abrir  http://localhost:8000
+services:
+  nodos:
+    build:
+      context: .
+      dockerfile: nodos_virtuales/Dockerfile
+    image: enjambre-aco/nodos-virtuales
+    command: ["--perdida", "0.03", "--retardo", "5"]
+  gemelo:
+    build:
+      context: .
+      dockerfile: gemelo/Dockerfile
+    image: enjambre-aco/gemelo
+    environment:
+      AP_IP: "nodos"              # en esta red de Docker el "carro 1" se llama nodos
+      FPS: "8"
+      TZ: "<-05>5"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./registros:/app/registros
+    depends_on:
+      - nodos

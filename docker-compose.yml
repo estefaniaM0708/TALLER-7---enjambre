@@ -1,0 +1,21 @@
+# Gemelo digital con las 3 ESP32-S3 reales
+#   1) Con internet:  docker compose build
+#   2) Conectar el PC a la red Wi-Fi "ENJAMBRE_ACO" (clave hormigas123) que crea el carro 1
+#   3) docker compose up         y abrir  http://localhost:8000
+services:
+  gemelo:
+    build:
+      context: .
+      dockerfile: gemelo/Dockerfile
+    image: enjambre-aco/gemelo
+    container_name: gemelo-aco
+    environment:
+      AP_IP: "192.168.4.1"        # IP del carro 1 (punto de acceso)
+      FPS: "8"
+      TZ: "<-05>5"                # hora de Colombia en los nombres de los registros
+    ports:
+      - "8000:8000"               # panel web
+      - "5005:5005/udp"           # telemetría de las ESP32
+    volumes:
+      - ./registros:/app/registros
+    stop_signal: SIGTERM
