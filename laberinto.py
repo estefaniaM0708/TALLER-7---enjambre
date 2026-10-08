@@ -1,91 +1,51 @@
-# laberinto.py  -  Mapa del laberinto/almacen (igual en las 3 ESP32-S3 y en el PC)
-#
-#   o = nodo (cruce)   A = inicio   M = meta
-#   - y | = tramo por donde se puede pasar     espacio = pared
-#   Los nodos estan separados 30 cm.
+"""Laberinto del almacén, leído de comun/laberinto.txt.
 
-MAPA = (
-    "o-o-o o-o-M",
-    "|   | |   |",
-    "o-o o-o o-o",
-    "| | |     |",
-    "o o-o-o-o o",
-    "|   |   | |",
-    "o-o-o o-o-o",
-    "|     | |  ",
-    "A-o-o-o o-o",
-)
+Numera las celdas libres igual que el firmware (aco.cpp): en orden de filas, de 0 a N-1.
+Los pasillos (aristas) se numeran como en Colonia::exportarFeromona: para cada celda, primero
+el vecino del este y luego el del sur.
+"""
 
-PASO = 0.30          # metros entre nodos
+import os
+import zlib
 
-NODOS = []           # NODOS[n] = (columna, fila)   fila 0 = abajo
-POS = []             # POS[n] = (x, y) en metros
-TRAMOS = []          # TRAMOS[e] = (a, b) con a < b
-VECINOS = []         # VECINOS[n] = [(vecino, tramo), ...]
-INICIO = 0
-META = 0
+CELDA = 0.25          # metros por celda
 
-_FILAS = len(MAPA)
+_aqui = os.path.dirname(os.path.abspath(__file__))
+_rutas = [os.path.join(_aqui, "..", "comun", "laberinto.txt"),
+          os.path.join(_aqui, "comun", "laberinto.txt")]
+ARCHIVO = next((r for r in _rutas if os.path.exists(r)), _rutas[0])
 
+with open(ARCHIVO, encoding="utf-8") as _f:
+    MAPA = [l.rstrip("\n") for l in _f if l.strip()]
 
-def _leer():
-    global INICIO, META
-    indice = {}
-    for f in range(0, _FILAS, 2):
-        linea = MAPA[f]
-        for c in range(0, len(linea), 2):
-            ch = linea[c]
-            if ch in "oAM":
-                n = len(NODOS)
-                col, fila = c // 2, (_FILAS - 1 - f) // 2
-                indice[(c, f)] = n
-                NODOS.append((col, fila))
-                POS.append((col * PASO, fila * PASO))
-                VECINOS.append([])
-                if ch == "A":
-                    INICIO = n
-                elif ch == "M":
-                    META = n
+FILAS, COLUMNAS = len(MAPA), len(MAPA[0])
+CRC = zlib.crc32("".join(MAPA).encode()) & 0xFFFFFFFF
 
-    def unir(p, q):
-        a, b = indice[p], indice[q]
-        if a > b:
-            a, b = b, a
-        e = len(TRAMOS)
-        TRAMOS.append((a, b))
-        VECINOS[a].append((b, e))
-        VECINOS[b].append((a, e))
+CELDAS = []           # CELDAS[i] = (fila, columna)
+ID = {}               # (fila, columna) -> i
+for _f, _fila in enumerate(MAPA):
+    for _c, _ch in enumerate(_fila):
+        if _ch != "#":
+            ID[(_f, _c)] = len(CELDAS)
+            CELDAS.append((_f, _c))
+            if _ch == "A":
+                INICIO = ID[(_f, _c)]
+            elif _ch == "M":
+                META = ID[(_f, _c)]
 
-    for (c, f) in list(indice.keys()):
-        linea = MAPA[f]
-        if c + 1 < len(linea) and linea[c + 1] == "-":
-            unir((c, f), (c + 2, f))
-        if f + 1 < _FILAS and c < len(MAPA[f + 1]) and MAPA[f + 1][c] == "|":
-            unir((c, f), (c, f + 2))
+ARISTAS = []          # ARISTAS[k] = (celda_a, celda_b)
+for _i, (_f, _c) in enumerate(CELDAS):
+    for _df, _dc in ((0, 1), (1, 0)):
+        _v = ID.get((_f + _df, _c + _dc))
+        if _v is not None:
+            ARISTAS.append((_i, _v))
 
 
-_leer()
+def posicion(celda):
+    """Centro de la celda en metros. x hacia la derecha (columnas), y hacia arriba (filas)."""
+    f, c = CELDAS[celda]
+    return (c * CELDA, (FILAS - 1 - f) * CELDA)
 
 
-def tramo(a, b):
-    """Numero de tramo entre los nodos a y b (o None si no hay)."""
-    for v, e in VECINOS[a]:
-        if v == b:
-            return e
-    return None
-
-
-def distancias(destino, bloqueados=()):
-    """Distancia en tramos de cada nodo al destino (BFS). -1 = sin camino."""
-    d = [-1] * len(NODOS)
-    d[destino] = 0
-    cola = [destino]
-    i = 0
-    while i < len(cola):
-        n = cola[i]
-        i += 1
-        for v, e in VECINOS[n]:
-            if e not in bloqueados and d[v] < 0:
-                d[v] = d[n] + 1
-                cola.append(v)
-    return d
+def es_pared(f, c):
+    return MAPA[f][c] == "#"
