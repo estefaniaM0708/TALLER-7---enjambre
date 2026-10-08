@@ -1,6 +1,6 @@
 # Enjambre de 3 carritos con algoritmo de hormigas (ACO) en ESP32-S3 y gemelo digital en PyBullet
 
-**Trabajo en grupo:**98
+**Trabajo en grupo:**
 
 Tres ESP32-S3 forman un **enjambre**. Cada una es el "cerebro" de un carrito que debe encontrar la ruta más corta entre la entrada **A** y la meta **M** de un almacén con forma de laberinto. Para eso, cada ESP32-S3 corre **su propia colonia de hormigas** (*Ant Colony Optimization*, variante MAX-MIN) y las tres se ayudan por Wi-Fi: el carro 1 crea la red en **modo AP** y cada tarjeta difunde su mejor ruta, que las otras dos depositan como **feromona** en su propio mapa. Todo se replica en un **gemelo digital** en PyBullet que corre dentro de **Docker**: los 3 carritos virtuales de tracción diferencial, la feromona pintada en el piso y un panel web para dar órdenes al enjambre.
 
